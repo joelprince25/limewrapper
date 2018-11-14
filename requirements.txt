@@ -1,0 +1,5 @@
+pandas>=0.20.3
+numpy>=1.14.2
+h2o>=3.18.0.11
+sklearn
+lime
