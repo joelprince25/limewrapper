@@ -4,6 +4,7 @@ LimeWrapper provides a simple wrapper around the [lime](https://github.com/marco
 
 Please refer to the Jupyter notebook in the example folder to see a classification and regression model explanation example.
 
+
 ## How to install the package
 ----------------------------------------------------------------------
 
@@ -18,6 +19,7 @@ To install the limewrapper package run:
 python setup.py install
 ```
 
+
 ## Lime Resources
 ----------------------------------------------------------------------
 
@@ -29,6 +31,7 @@ python setup.py install
 ## How to contribute
 ----------------------------------------------------------------------
 For small bug-fixes and new features, create a separate branch, make necessary commits and create a pull request.
+
 
 ## Upcoming Features
 ----------------------------------------------------------------------
