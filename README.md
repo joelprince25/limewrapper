@@ -8,10 +8,12 @@ Please refer to the Jupyter notebook in the example folder to see a classificati
 ## How to install the package
 ----------------------------------------------------------------------
 
+Clone the repository and cd into it.
+
 To install package dependencies run:
 
 ```bash
-pip install -r requirements.txt
+pip install --trusted-host pypi.python.org -r requirements.txt
 ```
 To install the limewrapper package run:
 
