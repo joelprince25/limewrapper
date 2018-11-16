@@ -17,14 +17,19 @@ class LimeWrapperH2O():
         self.model = model
         self.df_train = df_train.copy()
         self.df_test = df_test.copy()
-        self.target_col = self.df_train[target]
-        self.df_train.drop(target, axis = 1, inplace = True)
-        self.df_test.drop(target, axis = 1, inplace = True)
-        self.df_train = self.df_train[features]
-        self.df_test = self.df_test[features]
         self.col_type_dict = col_type_dict
+        self.col_type_dict_x = {key : value for key, value in self.col_type_dict.items() if key in features}
         self.features = features
         self.target = target
+
+        self.df_train = self.df_train[features + [target]]
+        self.df_test = self.df_test[features + [target]]
+        self.convert_types(self.df_train)
+        self.convert_types(self.df_test)
+
+        self.target_col = self.df_train[self.target]
+        self.df_train.drop(target, axis = 1, inplace = True)
+        self.df_test.drop(target, axis = 1, inplace = True)
 
         self.categorical_columns = [col
                                     for col
@@ -39,9 +44,6 @@ class LimeWrapperH2O():
                                         in self.df_train.columns.values
                                         if col
                                         in self.categorical_columns]
-
-        self.convert_types(self.df_train)
-        self.convert_types(self.df_test)
         self.impute(self.df_train)
         self.impute(self.df_test)
         self.preprocess()
@@ -49,8 +51,8 @@ class LimeWrapperH2O():
 
 
     def convert_types(self, df):
-        for col in df.columns:
-            if col in self.categorical_columns:
+        for col in df.columns.values:
+            if self.col_type_dict[col] == 'enum':
                 df[col] = df[col].astype(str)
             else:
                 df[col] = df[col].astype(float)
@@ -87,21 +89,21 @@ class LimeWrapperH2O():
         self.train = self.train.astype(float)
         self.test = self.test.astype(float)
 
-        self.train_h2o_df = h2o.H2OFrame(self.train)
-        self.train_h2o_df.set_names(self.features)
+        self.train_h2o_df = h2o.H2OFrame(self.train, column_names = self.features, column_types = self.col_type_dict_x)
         self.train_h2o_df[self.target] = h2o.H2OFrame(self.labels)
+
         if self.col_type_dict[self.target] == 'enum':
             self.train_h2o_df[self.target] = self.train_h2o_df[self.target].asfactor()
 
-        self.test_h2o_df = h2o.H2OFrame(self.test)
-        self.test_h2o_df.set_names(self.features)
+        self.test_h2o_df = h2o.H2OFrame(self.test, column_names = self.features, column_types = self.col_type_dict_x)
 
-        for feature in self.categorical_feat_index:
-            self.train_h2o_df[feature] = self.train_h2o_df[feature].asfactor()
-            self.test_h2o_df[feature] = self.test_h2o_df[feature].asfactor()
+        #for feature in self.categorical_feat_index:
+            #self.train_h2o_df[feature] = self.train_h2o_df[feature].asfactor()
+            #self.test_h2o_df[feature] = self.test_h2o_df[feature].asfactor()
 
     def model_refit(self):
-        self.model.train(x = self.features, y = self.target, training_frame = self.train_h2o_df )
+        if self.categorical_columns:
+            self.model.train(x = self.features, y = self.target, training_frame = self.train_h2o_df)
 
     def predict_proba(self,this_array):
         # If we have just 1 row of data we need to reshape it
@@ -139,7 +141,9 @@ class LimeWrapperH2O():
                          mode,
                          kernel_width = None,
                          feature_selection = 'auto',
-                         verbose = False):
+                         verbose = False,
+                         random_state = None,
+                         **kwargs):
         if mode == 'classification':
             self.mode = mode
             self.explainer = lime.lime_tabular.LimeTabularExplainer(self.train,
@@ -150,7 +154,9 @@ class LimeWrapperH2O():
                                                                     categorical_names = self.categorical_names,
                                                                     kernel_width = kernel_width,
                                                                     feature_selection = feature_selection,
-                                                                    verbose = verbose)
+                                                                    verbose = verbose,
+                                                                    random_state = random_state,
+                                                                    **kwargs)
         elif mode == 'regression':
             self.mode = mode
             self.explainer = lime.lime_tabular.LimeTabularExplainer(self.train,
@@ -160,13 +166,15 @@ class LimeWrapperH2O():
                                                                     categorical_names = self.categorical_names,
                                                                     kernel_width = kernel_width,
                                                                     feature_selection = feature_selection,
-                                                                    verbose = verbose)
+                                                                    verbose = verbose,
+                                                                    random_state = random_state,
+                                                                    **kwargs)
         else:
             print ("mode must be either classification or regression")
 
-    def explain(self, i, num_features = 10):
+    def explain(self, i, num_features = 10, **kwargs):
         if self.mode == 'classification':
-            self.exp = self.explainer.explain_instance(self.test[i], self.predict_proba, num_features = num_features)
+            self.exp = self.explainer.explain_instance(self.test[i], self.predict_proba, num_features = num_features, **kwargs)
         elif self.mode == 'regression':
-            self.exp = self.explainer.explain_instance(self.test[i], self.predict, num_features = num_features)
+            self.exp = self.explainer.explain_instance(self.test[i], self.predict, num_features = num_features, **kwargs)
         self.exp.show_in_notebook()
