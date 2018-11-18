@@ -5,7 +5,7 @@ setup(
       name = 'limewrapper',
       version = '0.1',
       author = 'Joel Prince Varghese',
-      author_email = 'joel.varghese@ehealth.com',
+      author_email = 'joelprince25@gmail.com',
       description = 'Wrapper around the lime package to explain model predictions',
       include_package_data = True,
 
