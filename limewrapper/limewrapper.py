@@ -23,14 +23,13 @@ class LimeWrapperH2O():
         self.target = target
 
         self.df_train = self.df_train[features + [target]]
-        self.df_test = self.df_test[features + [target]]
+        self.df_test = self.df_test[features]
         self.convert_types(self.df_train)
         self.convert_types(self.df_test)
 
         self.target_col = self.df_train[self.target]
         self.df_train.drop(target, axis = 1, inplace = True)
-        self.df_test.drop(target, axis = 1, inplace = True)
-
+        
         self.categorical_columns = [col
                                     for col
                                     in self.df_train.columns
